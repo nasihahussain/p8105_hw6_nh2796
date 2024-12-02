@@ -1,0 +1,66 @@
+---
+title: "p8105_hw6"
+output: github_document
+date: "2024-12-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom)
+```
+
+## **Problem 1**
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+
+set.seed(123) 
+
+bootstrap_results = 
+  replicate(
+  n = 5000, 
+  expr = {
+    boot_sample <- weather_df %>% sample_frac(replace = TRUE)
+    model <- lm(tmax ~ tmin, data = boot_sample)
+    glance_out <- glance(model)
+    tidy_out <- tidy(model)
+    
+    r_squared <- glance_out$r.squared
+    log_b0_b1 <- log(tidy_out$estimate[1] * tidy_out$estimate[2])
+    
+    c(r_squared = r_squared, log_b0_b1 = log_b0_b1)
+  },
+  simplify = FALSE
+) %>%
+  bind_rows()
+
+percentiles =
+  bootstrap_results %>%
+  summarize(
+    r_squared_low = quantile(r_squared, 0.025),
+    r_squared_high = quantile(r_squared, 0.975),
+    log_b0_b1_low = quantile(log_b0_b1, 0.025),
+    log_b0_b1_high = quantile(log_b0_b1, 0.975)
+  )
+
+bootstrap_results %>%
+  pivot_longer(cols = everything(), names_to = "metric", values_to = "value") %>%
+  ggplot(aes(x = value)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  facet_wrap(~metric, scales = "free") +
+  theme_minimal() +
+  labs(title = "Bootstrap Distributions", x = "Value", y = "Density")
+
+```
+
