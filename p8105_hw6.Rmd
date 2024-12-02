@@ -64,3 +64,69 @@ bootstrap_results %>%
 
 ```
 
+## **Problem 2**
+
+data import and cleaning
+
+```{r}
+homicide_data =
+  read_csv(file = "./homicide-data.csv")
+
+homicide_cleaned =
+  homicide_data %>%
+  mutate(
+    city_state = str_c(city, state, sep = ", "),
+    solved = if_else(disposition == "Closed by arrest", 1, 0),
+    victim_age = as.numeric(victim_age)
+  ) %>%
+  filter(
+    !city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL"),
+    victim_race %in% c("White", "Black"),
+    !is.na(victim_age)
+  )
+```
+
+logistic regression - baltimore
+
+```{r}
+baltimore_data =
+  homicide_cleaned %>%
+  filter(city_state == "Baltimore, MD")
+
+baltimore_model =
+  glm(solved ~ victim_age + victim_race + victim_sex, data = baltimore_data, family = binomial()) 
+
+broom::tidy(baltimore_model, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(term == "victim_sexMale") %>% 
+  select(estimate, conf.low, conf.high)
+```
+
+logistic regression - all cities
+
+```{r}
+all_city_model =
+  homicide_cleaned %>%
+  nest(data = -city_state) %>%
+  mutate(
+    model = map(data, ~ glm(solved ~ victim_age + victim_sex + victim_race, data = ., family = binomial)),
+    tidy_results = map(model, ~ tidy(., exponentiate = TRUE, conf.int = TRUE))
+  ) %>%
+  unnest(tidy_results) %>%
+  filter(term == "victim_sexMale") %>%
+  select(city_state, estimate, conf.low, conf.high)
+
+all_city_model %>%
+  arrange(estimate) %>%
+  mutate(city_state = factor(city_state, levels = city_state)) %>%
+  ggplot(aes(x = city_state, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  coord_flip() +
+  theme_minimal() +
+  labs(
+    title = "Adjusted Odds Ratios for Male vs Female Victims by City",
+    x = "City",
+    y = "Adjusted Odds Ratio (with 95% CI)"
+  )
+```
+
