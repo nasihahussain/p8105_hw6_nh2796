@@ -132,6 +132,10 @@ all_city_model %>%
   )
 ```
 
+**Comments on plot**
+
+The "plot"adjusted odds ratio for male vs female victims" plot illustrates adjusted odds ratios (ORs) with confidence intervals (CIs) for the likelihood of solving homicide cases comparing male victims to female victims across multiple cities. The ORs are derived from city-specific logistic regression models, with values > 1 suggesting that cases involving male victims are more likely to be solved than those involving female victims, and values < 1 suggesting the opposite. As you can see from the plot, there is a lot of variation across the different states with this data. Albuquerque, NM, and Stockton, CA, stand out with ORs that are the highest in this dataset and are greater than 1, suggesting male victim cases in these cities are significantly more likely to be solved. New York, NY, and Baton Rouge, LA, also stand out here with the lowest ORs, and ORs lower than 1, indicating that female victim cases are more likely to be solved in these cities. Cities like Atlanta were found to have an OR very close to 1, indicating that male and female victim cases in this city are solved at an equitable rate. These differences raise interesting questions with potential differences of methodology, interest, or biases within law enforcement departments across the country.
+
 ## **Problem 3**
 
 cleaning data and regression model
